@@ -1,0 +1,45 @@
+   <!doctype html>
+   <html lang="en">
+   <head>
+     <meta charset="utf-8" />
+     <meta name="viewport" content="width=device-width, initial-scale=1" />
+     <title>Bus Ticket Booking</title>
+     <link rel="stylesheet" href="/style.css" />
+   </head>
+   <body>
+     <main>
+       <h1>Bus Ticket Booking</h1>
+       <p class="info" id="fare-info">Loading fares...</p>
+
+       <!-- Section 1: make a booking -->
+       <section>
+         <h2>1. Book a ticket</h2>
+         <form id="booking-form">
+           <label>Route <select id="route"></select></label>
+           <label>Travel date <input type="date" id="date" /></label>
+           <label>Full name <input type="text" id="name" /></label>
+           <label>Phone <input type="text" id="phone" placeholder="17xxxxxx or 77xxxxxx" /></label>
+
+           <h3>Select seats (max 4)</h3>
+           <div id="seat-grid" class="seat-grid"></div>
+           <div id="passengers"></div>
+
+           <p class="total">Total: Nu. <span id="total">0</span></p>
+           <button type="submit" id="book-btn">Book</button>
+         </form>
+         <div id="booking-result" class="result" hidden></div>
+       </section>
+
+       <!-- Section 2: cancel a booking -->
+       <section>
+         <h2>2. Cancel a booking</h2>
+         <form id="cancel-form">
+           <label>Booking ID <input type="text" id="cancel-id" placeholder="BK-0001" /></label>
+           <button type="submit" id="cancel-btn">Cancel booking</button>
+         </form>
+         <div id="cancel-result" class="result" hidden></div>
+       </section>
+     </main>
+     <script src="/app.js"></script>
+   </body>
+   </html>
