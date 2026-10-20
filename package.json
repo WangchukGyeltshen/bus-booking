@@ -1,7 +1,7 @@
 {
   "name": "bus-booking",
   "version": "1.0.0",
-  "description": "",
+  "description": "Bus ticket booking system (Phuntsholing-Thimphu) built for SWE302 Assignment 3 software testing project",
   "main": "index.js",
   "scripts": {
     "dev": "tsx watch src/server.ts",
@@ -10,7 +10,7 @@
     "test:watch": "vitest",
     "coverage": "vitest run --coverage",
     "typecheck": "tsc --noEmit",
-     "test:e2e": "playwright test"
+    "test:e2e": "playwright test"
   },
   "repository": {
     "type": "git",
