@@ -5,60 +5,66 @@ import {
 } from "./config";
 import { ValidationError, ConflictError, NotFoundError } from "./errors";
 import { validateRoute, validateTravelDate } from "./validation";
-import {
-  createBooking, getBooking, cancelBooking, getBookedSeats, BookingRequest,
-} from "./bookingService";
+import { BookingService, BookingRequest } from "./bookingService";
 
-/** The HTTP application. Exported without starting a server so tests can use it. */
-export const app = new Hono();
+/**
+ * Builds the HTTP application around a booking service.
+ * Quality Improvement 2: the service is passed in, so tests can give each
+ * test its own empty service with a fixed clock. Does not start a server.
+ */
+export function createApp(service: BookingService = new BookingService()): Hono {
+  const app = new Hono();
 
-/** Route list and fare information for the booking form. */
-app.get("/api/routes", (c) =>
-  c.json({
-    routes: ROUTES,
-    totalSeats: TOTAL_SEATS,
-    adultFare: ADULT_FARE,
-    childFare: ADULT_FARE * (1 - CHILD_DISCOUNT),
-    childAgeLimit: CHILD_AGE_LIMIT,
-    departure: `${String(DEPARTURE_HOUR).padStart(2, "0")}:00`,
-  }),
-);
+  /** Route list and fare information for the booking form. */
+  app.get("/api/routes", (c) =>
+    c.json({
+      routes: ROUTES,
+      totalSeats: TOTAL_SEATS,
+      adultFare: ADULT_FARE,
+      childFare: ADULT_FARE * (1 - CHILD_DISCOUNT),
+      childAgeLimit: CHILD_AGE_LIMIT,
+      departure: `${String(DEPARTURE_HOUR).padStart(2, "0")}:00`,
+    }),
+  );
 
-/** Booked seats for a route and date, e.g. /api/seats?route=...&date=2026-11-10 */
-app.get("/api/seats", (c) => {
-  const route = validateRoute(c.req.query("route") ?? "");
-  const date = validateTravelDate(c.req.query("date") ?? "");
-  return c.json({ route, date, totalSeats: TOTAL_SEATS, booked: getBookedSeats(route, date) });
-});
+  /** Booked seats for a route and date, e.g. /api/seats?route=...&date=2026-11-10 */
+  app.get("/api/seats", (c) => {
+    const route = validateRoute(c.req.query("route") ?? "");
+    const date = validateTravelDate(c.req.query("date") ?? "", service.clock());
+    return c.json({ route, date, totalSeats: TOTAL_SEATS, booked: service.getBookedSeats(route, date) });
+  });
 
-/** Create a booking. Returns 201 with the booking. */
-app.post("/api/bookings", async (c) => {
-  let body: BookingRequest;
-  try {
-    body = await c.req.json();
-  } catch {
-    throw new ValidationError("Request body must be valid JSON");
-  }
-  return c.json(createBooking(body), 201);
-});
+  /** Create a booking. Returns 201 with the booking. */
+  app.post("/api/bookings", async (c) => {
+    let body: BookingRequest;
+    try {
+      body = await c.req.json();
+    } catch {
+      throw new ValidationError("Request body must be valid JSON");
+    }
+    return c.json(service.createBooking(body), 201);
+  });
 
-/** Look up a booking by ID. */
-app.get("/api/bookings/:id", (c) => c.json(getBooking(c.req.param("id"))));
+  /** Look up a booking by ID. */
+  app.get("/api/bookings/:id", (c) => c.json(service.getBooking(c.req.param("id"))));
 
-/** Cancel a booking and return it with the refund. */
-app.post("/api/bookings/:id/cancel", (c) => c.json(cancelBooking(c.req.param("id"))));
+  /** Cancel a booking and return it with the refund. */
+  app.post("/api/bookings/:id/cancel", (c) => c.json(service.cancelBooking(c.req.param("id"))));
 
-/** Serve the web page (index.html, script, styles) from src/public. */
-app.use("/*", serveStatic({ root: "./src/public" }));
+  /** Serve the web page (index.html, script, styles) from src/public. */
+  app.use("/*", serveStatic({ root: "./src/public" }));
 
-/** Fix DEF-04: unknown paths return JSON (not plain text) so the page can read the error. */
-app.notFound((c) => c.json({ error: "Not found" }, 404));
+  /** Fix DEF-04: unknown paths return JSON (not plain text) so the page can read the error. */
+  app.notFound((c) => c.json({ error: "Not found" }, 404));
 
-/** Maps business errors to HTTP status codes. */
-app.onError((err, c) => {
-  if (err instanceof ValidationError) return c.json({ error: err.message }, 400);
-  if (err instanceof ConflictError) return c.json({ error: err.message }, 409);
-  if (err instanceof NotFoundError) return c.json({ error: err.message }, 404);
-  console.error(err);
-  return c.json({ error: "Internal server error" }, 500);
-});
+  /** Maps business errors to HTTP status codes. */
+  app.onError((err, c) => {
+    if (err instanceof ValidationError) return c.json({ error: err.message }, 400);
+    if (err instanceof ConflictError) return c.json({ error: err.message }, 409);
+    if (err instanceof NotFoundError) return c.json({ error: err.message }, 404);
+    console.error(err);
+    return c.json({ error: "Internal server error" }, 500);
+  });
+
+  return app;
+}
