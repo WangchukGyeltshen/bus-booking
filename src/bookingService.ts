@@ -47,7 +47,7 @@ export function getBookedSeats(route: string, date: string): number[] {
 }
 
 /** Validates a request, checks seat availability and saves the booking. */
-export function createBooking(req: BookingRequest): Booking {
+export function createBooking(req: BookingRequest, now: Date = new Date()): Booking {
   // Fix DEF-01: body must be an object (null crashed on req.name)
   if (req === null || typeof req !== "object") {
     throw new ValidationError("Request body must be a JSON object");
@@ -60,7 +60,7 @@ export function createBooking(req: BookingRequest): Booking {
   const name = validateName(req.name);
   const phone = validatePhone(req.phone);
   const route = validateRoute(req.route);
-  const date = validateTravelDate(req.date);
+  const date = validateTravelDate(req.date, now);
   const passengers = req.passengers;
   const seats = validateSeats(passengers.map((p) => p.seat));
   const fare = totalFare(passengers.map((p) => p.age));
@@ -89,13 +89,12 @@ export function getBooking(id: string): Booking {
 }
 
 /** Cancels a booking, frees its seats and records the refund. */
-export function cancelBooking(id: string): Booking {
+export function cancelBooking(id: string, now: Date = new Date()): Booking {
   const booking = getBooking(id);
   if (booking.status === "CANCELLED") {
     throw new ConflictError(`Booking ${id} is already cancelled`);
   }
-  // NOTE: uses the real clock (to be improved later)
-  booking.refund = calculateRefund(booking.totalFare, booking.date, new Date());
+  booking.refund = calculateRefund(booking.totalFare, booking.date, now);
   booking.status = "CANCELLED";
   return booking;
 }

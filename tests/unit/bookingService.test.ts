@@ -83,4 +83,14 @@ describe("Booking service (bookingService.ts)", () => {
     expect(() => createBooking(request({ date, phone: "12345" }))).toThrow(ValidationError);
     expect(getBookedSeats("Phuntsholing-Thimphu", date)).toEqual([]);
   });
+
+  it("TC-40 (QI-1): 50% and 0% refunds can now be tested through the service", () => {
+    const NOW = new Date(2026, 9, 20, 15, 0); // 20 Oct 2026, 3:00 PM
+    // Departs 25 Oct 08:00; cancelling 24 Oct 20:00 leaves exactly 12h -> 50%
+    const b1 = createBooking(request({ date: "2026-10-25", passengers: [{ seat: 20, age: 30 }] }), NOW);
+    expect(cancelBooking(b1.id, new Date(2026, 9, 24, 20, 0)).refund).toBe(150);
+    // Departs 26 Oct 08:00; cancelling 26 Oct 07:00 leaves 1h -> 0%
+    const b2 = createBooking(request({ date: "2026-10-26", passengers: [{ seat: 21, age: 30 }] }), NOW);
+    expect(cancelBooking(b2.id, new Date(2026, 9, 26, 7, 0)).refund).toBe(0);
+  });
 });

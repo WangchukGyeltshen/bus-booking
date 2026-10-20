@@ -61,9 +61,11 @@ export function validateSeats(seats: number[]): number[] {
 /**
  * Travel date must be YYYY-MM-DD, not in the past,
  * and at most MAX_DAYS_AHEAD days from today.
- * NOTE: reads the system clock directly (to be improved later).
+ * @param now current time; defaults to the system clock, but tests pass a
+ *            fixed date so results do not depend on the day the tests run
+ *            (Quality Improvement 1: clock injection)
  */
-export function validateTravelDate(dateStr: string): string {
+export function validateTravelDate(dateStr: string, now: Date = new Date()): string {
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateStr ?? "");
   if (!match) {
     throw new ValidationError("Date must be in YYYY-MM-DD format");
@@ -74,7 +76,7 @@ export function validateTravelDate(dateStr: string): string {
     throw new ValidationError("Date does not exist");
   }
 
-  const today = new Date();
+  const today = new Date(now);
   today.setHours(0, 0, 0, 0);
   const daysAhead = Math.round((travel.getTime() - today.getTime()) / MS_PER_DAY);
 

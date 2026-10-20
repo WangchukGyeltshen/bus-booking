@@ -5,14 +5,8 @@ import {
 } from "../../src/validation";
 import { ValidationError } from "../../src/errors";
 
-/** Returns a local date string (YYYY-MM-DD) offset from today. */
-function dateOffset(days: number): string {
-  const d = new Date();
-  d.setDate(d.getDate() + days);
-  const mm = String(d.getMonth() + 1).padStart(2, "0");
-  const dd = String(d.getDate()).padStart(2, "0");
-  return `${d.getFullYear()}-${mm}-${dd}`;
-}
+/** Fixed "now" for date tests: 20 Oct 2026, 3:00 PM (no dependence on the real clock). */
+const NOW = new Date(2026, 9, 20, 15, 0);
 
 describe("Input validation (validation.ts)", () => {
   it("TC-07: valid name (trimmed) and phone are accepted", () => {
@@ -58,10 +52,10 @@ describe("Input validation (validation.ts)", () => {
   });
 
   it("TC-14: boundary, today and +30 days accepted, yesterday and +31 rejected", () => {
-    expect(validateTravelDate(dateOffset(0))).toBe(dateOffset(0));
-    expect(validateTravelDate(dateOffset(30))).toBe(dateOffset(30));
-    expect(() => validateTravelDate(dateOffset(-1))).toThrow(ValidationError);
-    expect(() => validateTravelDate(dateOffset(31))).toThrow(ValidationError);
+    expect(validateTravelDate("2026-10-20", NOW)).toBe("2026-10-20");             // today
+    expect(validateTravelDate("2026-11-19", NOW)).toBe("2026-11-19");             // +30 days
+    expect(() => validateTravelDate("2026-10-19", NOW)).toThrow(ValidationError); // yesterday
+    expect(() => validateTravelDate("2026-11-20", NOW)).toThrow(ValidationError); // +31 days
   });
 
   it("TC-15: wrong format and non-existent dates are rejected", () => {
