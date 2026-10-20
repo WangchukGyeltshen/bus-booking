@@ -118,7 +118,9 @@ function render() {
 
 /** Recalculates the displayed total. */
 function updateTotal() {
-  $("total").textContent = state.selected.reduce((sum, s) => sum + fare(Number(state.ages[s])), 0);
+  // Fix DEF-03: an empty age adds nothing to the total (it is no longer treated as age 0)
+  $("total").textContent = state.selected.reduce(
+    (sum, s) => sum + (state.ages[s] === "" ? 0 : fare(Number(state.ages[s]))), 0);
 }
 
 /** Sends the booking to the API. */
@@ -129,7 +131,11 @@ async function onBook(e) {
     phone: $("phone").value,
     route: $("route").value,
     date: $("date").value,
-    passengers: state.selected.map((seat) => ({ seat, age: Number(state.ages[seat]) })),
+    // Fix DEF-03: send an empty age as null so the server rejects it (Number("") was 0)
+    passengers: state.selected.map((seat) => ({
+      seat,
+      age: state.ages[seat] === "" ? null : Number(state.ages[seat]),
+    })),
   };
   try {
     const b = await api("/api/bookings", {
@@ -150,6 +156,11 @@ async function onBook(e) {
 async function onCancel(e) {
   e.preventDefault();
   const id = $("cancel-id").value.trim();
+  // Fix DEF-04: check for an empty ID before calling the server
+  if (!id) {
+    show($("cancel-result"), "Please enter a booking ID.", false);
+    return;
+  }
   try {
     const b = await api(`/api/bookings/${encodeURIComponent(id)}/cancel`, { method: "POST" });
     show($("cancel-result"), `Booking ${b.id} cancelled.\nRefund: Nu. ${b.refund}`, true);

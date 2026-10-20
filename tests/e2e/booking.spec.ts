@@ -60,3 +60,24 @@ test("TC-34: UI shows errors for invalid phone and a 5th seat", async ({ page })
   await expect(page.locator("#booking-result")).toContainText("Phone must be 8 digits");
   await page.screenshot({ path: "test-results/e2e-3-errors.png", fullPage: true });
 });
+
+test("TC-38 (DEF-03): empty passenger age is rejected, not charged as a child", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.locator("#fare-info")).toContainText("Departs daily");
+  await page.fill("#name", "Test User");
+  await page.fill("#phone", "17123456");
+  await page.click(seat(10));
+  await page.fill("#age-10", "");
+  await page.click("#book-btn");
+  await expect(page.locator("#booking-result")).toContainText("Age must be");
+  await expect(page.locator(seat(10))).toBeEnabled(); // nothing was booked
+  await page.screenshot({ path: "test-results/e2e-4-empty-age.png", fullPage: true });
+});
+
+test("TC-39 (DEF-04): empty booking ID shows a clear message", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.locator("#fare-info")).toContainText("Departs daily");
+  await page.click("#cancel-btn");
+  await expect(page.locator("#cancel-result")).toContainText("Please enter a booking ID");
+  await page.screenshot({ path: "test-results/e2e-5-empty-id.png", fullPage: true });
+});
