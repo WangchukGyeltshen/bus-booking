@@ -10,7 +10,8 @@
     "test:watch": "vitest",
     "coverage": "vitest run --coverage",
     "typecheck": "tsc --noEmit",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "ci": "npm run typecheck && npm run coverage && npm run test:e2e"
   },
   "repository": {
     "type": "git",
